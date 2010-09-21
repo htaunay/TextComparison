@@ -1,6 +1,6 @@
 ################################################################################
 # Exercise for NLP and Python pratice
-# Creating a comparison table between several text sources
+# Comparison between two different groups of text
 # Rio de Janeiro, 26/08/2010
 # Developed by Henrique Taunay
 ################################################################################
@@ -23,8 +23,8 @@ tf = TextFactory()
 
 # Concatenates each generated text into one main text list.
 mainList = []
-mainList += tf.getHtmlTexts( "../data/ibra.htmldata" )
-mainList += tf.getHtmlTexts( "../data/gtx480.htmldata" )
+mainList += tf.getReutersTexts( 'trade', 500, True )
+mainList += tf.getReutersTexts( 'interest', 500, True )
 
 tcu = TextComparisonUtils()
 
@@ -33,26 +33,26 @@ for l in mainList:
 	mainList[ mainList.index( l ) ] = tcu.removeStopwords( l )
 
 # Lemmatizing all entrys in all list in the mainList utilizing the WordNet
-# lemmatizer method, encapsulated by the TextComparisonUtils class.
+#  lemmatizer method, encapsulated by the TextComparisonUtils class.
 for l in mainList:
 	mainList[ mainList.index(l) ] = tcu.lemmatizeText( l )
 
 # Creating a list of frequency distributions of each of the text in the
-# mainList, then sorting them alphabetically
+#  mainList, then sorting them alphabetically.
+# I stopped using 'list.index(l)' and started using the good old fashioned i=0
+#  and i++, because the fucking 'index' function is unstable and made me lose
+#  hours of work over a counter that doesn't know how to count >(
+i = 0
 freqDistList = []
 for l in mainList:
 	fd = nltk.probability.FreqDist( l )
 	sample = sorted( set( l ) )
 	sortedFreqDist = [ ( word, fd[word] ) for word in sample ]
-	freqDistList.insert( mainList.index(l), sortedFreqDist ) 
+	freqDistList.insert( i, sortedFreqDist )
+	i += 1
 
-#TODO
-keywords = [ 'card', 'nvidia', 'core', 'ati', 'fermi', 'review', 
-			 'barcelona', 'ibrahimovic', 'transfer', 'milan', 'million' ]
-for l in freqDistList:
-	freqDistList[ freqDistList.index(l) ] = tcu.redefineScales( l, keywords )
-
-#TODO
+# Creating and populating a similarity list, containing all of the cosine
+#  similarity results calculated between all of the texts in the mainlist.
 pos = 0
 similarityList = []
 for l in freqDistList:
@@ -60,24 +60,28 @@ for l in freqDistList:
 	i = lpos + 1
 	for i in range( len(freqDistList) ):
 		if i != lpos:
+
+			intersection = tcu.getTextIntersection( mainList[lpos], mainList[i] )
 			similarity = tcu.calcCosineSimilarity( freqDistList[lpos], 
 												   freqDistList[i], 
-												   tcu.getTextIntersection( mainList[lpos], mainList[i] ) )
+												   intersection )
 		
 			similarityList.insert( pos, similarity )
 		pos += 1
 		i += 1
 	
-#TODO
+# Creating a plot figure obejct and setting as a subplot a histogram object
+#  constructed with the cosine similarty results of the last step.
 fig = plot.figure()
 ax = fig.add_subplot( 111 )
 ax.hist( similarityList, 50 )
 
-#TODO
+# Customizing the histogram configuration
+ax.set_title( 'Interest + Trade' )
 ax.set_xlabel( 'Similarity' )
 ax.set_ylabel( 'Frequency' )
 ax.set_xlim( 0, 1 )
-ax.set_ylim( 0, len( similarityList)/5 )
+ax.set_ylim( 0, len( similarityList)/9 )
 ax.grid( True )
 
 plot.show()

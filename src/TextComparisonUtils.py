@@ -1,6 +1,6 @@
 ################################################################################
 # Exercise for NLP and Python pratice
-# Text comparisson Utility Functions
+# Text comparisson utility functions.
 # Rio de Janeiro, 17/09/2010
 # Developed by Henrique Taunay
 ################################################################################
@@ -19,7 +19,7 @@ class TextComparisonUtils:
 		 return [ word for word in text if word not in nltk.corpus.stopwords.words('english') ]
 		 
 	# Receives a text, and returns all of its entrys lemmatized by the
-	# WordNet lemmatizer method.
+	#  WordNet lemmatizer method.
 	def lemmatizeText( self, text ):
 		lemmatizer = nltk.WordNetLemmatizer()
 		ltext = []
@@ -42,12 +42,12 @@ class TextComparisonUtils:
 			if ss2.count( word ) != 0:
 				intersectionList.insert( i, word )
 				i += 1
-			
+				
 		return intersectionList
 
 	# Receives a frequency distribution object, and a list of intersection words,
-	# and returns a new frequency distribution with only the words also included
-	# in the given intersection list
+	#  and returns a new frequency distribution with only the words also included
+	#  in the given intersection list
 	def removeNonIntersections( self, freqDist, intersection ):
 		i = 0
 		newFD = []
@@ -59,12 +59,14 @@ class TextComparisonUtils:
 			
 		return newFD
 		
-	#TODO
-	def redefineScales( self, fd, keywords ):
+	# Receives a frequency distribution, and a list of keywords. Returns the
+	#  same frequency distribution, but with all the keywords present in it
+	#  (if any), re-scaled according to the given scale factor.
+	def redefineScales( self, fd, keywords, scale = 3 ):
 		newFd = []
 		for tupl in fd:
 			if tupl[0] in keywords:
-				newFd += [( tupl[0], tupl[1]*2 )]
+				newFd += [( tupl[0], tupl[1]*scale )]
 			else:
 				newFd += [( tupl[0], tupl[1] )]
 				
@@ -73,7 +75,8 @@ class TextComparisonUtils:
 	# Calculates the dot operation between two lists, or nx1 matrixes.
 	def fdDot( self, A, B ):
 		if len( A ) != len( B ):
-			return -1
+			raise DotCalculationError( 'The Dot operation connto be performed' +
+									   'between two lists of different sizes!' )
 	
 		pot = 0	
 		for n in A:
@@ -82,8 +85,8 @@ class TextComparisonUtils:
 		return pot		
 
 	# Receives two lists representing text frequency distributions, and returns a
-	# value varying from 0 to 1, representing Theta, the cosine similarity between
-	# the given texts
+	#  value varying from 0 to 1, representing Theta, the cosine similarity between
+	#  the given texts
 	def calcCosineSimilarity( self, fd1, fd2, intersection ):
 
 		if len( intersection ) == 0:
@@ -94,6 +97,11 @@ class TextComparisonUtils:
 			
 		top = self.fdDot( cleanFD1, cleanFD2 )
 		bottom = math.sqrt( self.fdDot( fd1, fd1 ) ) * math.sqrt( self.fdDot( fd2, fd2 ) )
-	
+		
+		if (top/bottom) < 0:
+			print 'C1 - ', cleanFD1
+			print 'C2 - ', cleanFD2
+			x = raw_input('Ok')
+		
 		return ( top/bottom )
 		
