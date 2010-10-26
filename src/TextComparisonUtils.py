@@ -16,7 +16,7 @@ class TextComparisonUtils:
 
 	# Receives a text, and returns it without any stopwords(in english).
 	def removeStopwords( self, text ):
-		 return [ word for word in text if word not in nltk.corpus.stopwords.words('english') ]
+		 return [ word for word in text if word not in nltk.corpus.stopwords.words('english') or len(word) < 2 ]
 		 
 	# Receives a text, and returns all of its entrys lemmatized by the
 	#  WordNet lemmatizer method.
@@ -26,8 +26,9 @@ class TextComparisonUtils:
 		i = 0
 		
 		for word in text:
-			ltext.insert( i, lemmatizer.lemmatize(word) )
-			i += 1
+			if len( word ) > 1:
+				ltext.insert( i, lemmatizer.lemmatize(word) )
+				i += 1
 		
 		return ltext
 	
@@ -105,3 +106,131 @@ class TextComparisonUtils:
 		
 		return ( top/bottom )
 		
+	# Receives a similarityList, and returns the number of texts(depth) that
+	#  were necessary to generate a similarityList of such size. In other words,
+	#  n texts generate n(n-1)/2 similarity results. This method returns n from
+	#  numResults.
+	def findSimilarityListDepth( self, similarityList ):
+		stack = 1
+		counter = 2
+		listSize = len( similarityList )
+		
+		if listSize <= 0:
+			return -1
+		
+		while True:
+			if stack == listSize:
+				return counter
+			elif stack >= listSize:
+				return -1
+				
+			stack += counter
+			counter += 1
+	
+	# Receives a list of similaries regarding one specific text, and returns if 
+	#  a text sample is invalid, by vrifying if any of the comparisons of the
+	#  given text between the rest of the samples generated at least one
+	#  acceptable(above threshold) result.
+	def isTextInvalid( self, textSimilarityList, threshold = 0.2 ):
+		
+		for s in textSimilarityList:
+			if s > threshold:
+				return False
+				
+		return True
+		
+	
+	# Receives a list of similarities, and removes data from it, if
+	#  considered to be invalid. This method MODIFIES the similarityList
+	#  parameter, and is very specific for the type of data it receives,
+	#  since it is necessary to decompose the given list into the original
+	#  order of the similarity calculation step. This process can not be done
+	#  in such step, because: you first need to calculate all the similarites
+	#  before difining if it is invalid or not; and not necessarily everyone
+	#  may want his/her invalid data cleaned.
+	def cleanInvalidData( self, similarityList ):
+	
+		depth = self.findSimilarityListDepth( similarityList )
+		if depth == -1:
+			return
+		
+		auxSimList = []
+		auxPosList = []
+		removalList = []
+		num = 0
+		
+		while num < depth:
+			
+			auxSimList[:] = []
+			auxPosList[:] = []
+			
+			height = num
+			width = depth - 2
+
+			totalCounter = num - 1
+			if totalCounter < 0:
+				totalCounter = 0
+				
+			while height != 0:
+				auxSimList.append( similarityList[totalCounter] )
+				auxPosList.append( totalCounter )
+				totalCounter += width
+				height -= 1
+				width -= 1
+				
+			if num != 0:
+				totalCounter += 1
+			
+			for i in range( depth - (num + 1) ):
+				auxSimList.append( similarityList[totalCounter] )
+				auxPosList.append( totalCounter )
+				totalCounter += 1
+				
+			if self.isTextInvalid( auxSimList ):
+				removalList[len(removalList):] = auxPosList
+			
+			num += 1
+			
+		for j in range( len(removalList) ):
+			del  similarityList[ removalList.pop() ]
+			
+	# Receives a text, and returns a set of it, sorted.
+	def sortAndSet( self, text ):
+		counter = {}
+		for i in text:
+			try: counter[i] += 1
+			except KeyError: counter[i] = 1
+			
+		ss = counter.keys()
+		ss.sort()
+		
+		tss = {}
+		
+		for w in ss:
+			tss[w] = 0
+		
+		return tss
+			
+	# Receives a list of texts, and returns a ordered set of all the words
+	#  present in them.
+	def createWordSet( self, textList ):
+		wordSet = []
+		for l in textList:
+			wordSet[len(wordSet):] = l
+			
+		wordSet = self.sortAndSet( wordSet )
+		
+		return wordSet
+		
+	# Receives a frequency distribution regarding a text, and a word set.
+	# Returns a text position in the space represented by n dimensions (n beign
+	#  the number of words in the word set), of which coordinates are the
+	#  words frequencies.
+	def populateTextPosition( self, freqDist, wordSet ):
+		tp = []
+		for w in wordSet:
+			tp.append( freqDist[w] )
+			
+		return tp
+				
+			

@@ -31,7 +31,7 @@ tcu = TextComparisonUtils()
 # Removing stopwords from each of the texts.
 for l in mainList:
 	mainList[ mainList.index( l ) ] = tcu.removeStopwords( l )
-
+	
 # Lemmatizing all entrys in all list in the mainList utilizing the WordNet
 #  lemmatizer method, encapsulated by the TextComparisonUtils class.
 for l in mainList:
@@ -54,21 +54,27 @@ for l in mainList:
 # Creating and populating a similarity list, containing all of the cosine
 #  similarity results calculated between all of the texts in the mainlist.
 pos = 0
+l = 0
 similarityList = []
-for l in freqDistList:
-	lpos = freqDistList.index(l)
-	i = lpos + 1
-	for i in range( len(freqDistList) ):
-		if i != lpos:
+while l < len( freqDistList ):
+	i = l + 1
+	while i < len( freqDistList ):
+		if i != l:
 
-			intersection = tcu.getTextIntersection( mainList[lpos], mainList[i] )
-			similarity = tcu.calcCosineSimilarity( freqDistList[lpos], 
+			intersection = tcu.getTextIntersection( mainList[l], mainList[i] )
+			similarity = tcu.calcCosineSimilarity( freqDistList[l], 
 												   freqDistList[i], 
 												   intersection )
-		
+				
 			similarityList.insert( pos, similarity )
+			
 		pos += 1
 		i += 1
+	l += 1
+		
+# Removes from the similarityList, values that results came from invalid text
+#  samples, that ALWAYS presented similarities below the expected threshold
+tcu.cleanInvalidData( similarityList )
 	
 # Creating a plot figure obejct and setting as a subplot a histogram object
 #  constructed with the cosine similarty results of the last step.
@@ -77,12 +83,12 @@ ax = fig.add_subplot( 111 )
 ax.hist( similarityList, 50 )
 
 # Customizing the histogram configuration
-ax.set_title( 'Interest + Trade' )
 ax.set_xlabel( 'Similarity' )
 ax.set_ylabel( 'Frequency' )
 ax.set_xlim( 0, 1 )
 ax.set_ylim( 0, len( similarityList)/9 )
 ax.grid( True )
 
+plot.title( 'Trade + Interest' )
 plot.show()
 
